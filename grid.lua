@@ -5,19 +5,15 @@ function round(num, numDecimalPlaces)
     return math.floor(num * mult + 0.5) / mult
 end
 
-function debug_str(c) 
-    return "["..tostring(c.x)..";"..tostring(c.y).."] | f: "..tostring(round(c.f,3)).."\ng: "..tostring(round(c.g,3)).."\nh: "..tostring(round(c.f,3))
-end
-
 new = function(w, h, create_func) -- Creates a w*h grid and fills in with dv
     -- create_func must be a function with 0 args which creates a default "case"
     local g = {}
 
     -- Scale multipliers of the grid used for drawing
-    g.sx = 1 
+    g.sx = 1
     g.sy = 1
 
-    g.font = love.graphics.newFont(12 * g.sx) -- Font for debugging
+    g.font = love.graphics.newFont(12) -- Font for debugging
 
     for i=1, h do
         local y = {}
@@ -36,39 +32,17 @@ new = function(w, h, create_func) -- Creates a w*h grid and fills in with dv
         local ch = wh / #g * g.sy-- Case height
         --print("Case dimensions are:"..tostring(cw).."; "..tostring(ch))
 
+        love.graphics.draw(g.grid_image)
+
         -- openset
         for i, c in ipairs(openset) do
-            --print(c.g, c.h, c.f)
-            local tx = (c.x-1) * cw
-            local ty = (c.y-1) * ch
-            love.graphics.setColor(255, 255, 0)
-            love.graphics.rectangle("fill", tx, ty, cw, ch)
-            if debug then 
-                love.graphics.setColor(0, 0, 0)
-                love.graphics.draw(
-                    love.graphics.newText(
-                        g.font, debug_str(c)),
-                    tx, ty)
-            end
+            c:draw(cw, ch, {255, 255, 0}, debug)
         end
 
         -- closeset
         for i, c in ipairs(closeset) do
-            --print(c.g, c.h, c.f)
-            local tx = c.x * cw
-            local ty = c.y * ch
-            love.graphics.setColor(127, 0, 0)
-            love.graphics.rectangle("fill", tx, ty, cw, ch)
-            if debug then 
-                love.graphics.setColor(0, 0, 0)
-                love.graphics.draw(
-                    love.graphics.newText(
-                        g.font, debug_str(c)),
-                    tx, ty)
-            end
+            c:draw(cw, ch, {100, 0, 0}, debug)
         end
-
-        love.graphics.draw(g.grid_image)
     end
 
     function g:print_grid()
@@ -90,13 +64,17 @@ new = function(w, h, create_func) -- Creates a w*h grid and fills in with dv
         local tmp_canvas = love.graphics.newCanvas(ww, wh)
         love.graphics.setCanvas(tmp_canvas)
             love.graphics.clear(0, 0, 0, 0)
-            
+
             for i, y in ipairs(g) do
                 for j, x in ipairs(y) do
-                    local tx = (j-1) * cw
-                    local ty = (i-1) * ch
-                    love.graphics.setColor(0, 0, 0, 1)
-                    love.graphics.rectangle("line", tx, ty, cw, ch)
+                    local tx = (j-1) * cw + 1
+                    local ty = (i-1) * ch + 1
+                    local c = {0, 0, 0, 1}
+                    if x.walkable then
+                        c = {0, 0, 0, 0}
+                    end
+                    love.graphics.setColor(c)
+                    love.graphics.rectangle("fill", tx, ty, cw-1, ch-1)
                 end
             end
         love.graphics.setCanvas()
@@ -108,7 +86,7 @@ new = function(w, h, create_func) -- Creates a w*h grid and fills in with dv
 
     return g
 end
-  
+
 return {
     new = new
 }
