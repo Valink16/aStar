@@ -7,6 +7,9 @@ end
 
 new = function(w, h, create_func) -- Creates a w*h grid and fills in with dv
     -- create_func must be a function with 0 args which creates a default "case"
+
+    -- /!\ Make sure you call g.grid_image = g:generate_grid() atleast one time
+
     local g = {}
 
     -- Scale multipliers of the grid used for drawing
@@ -67,22 +70,20 @@ new = function(w, h, create_func) -- Creates a w*h grid and fills in with dv
 
             for i, y in ipairs(g) do
                 for j, x in ipairs(y) do
-                    local tx = (j-1) * cw + 1
-                    local ty = (i-1) * ch + 1
+                    local tx = (j-1) * cw 
+                    local ty = (i-1) * ch 
                     local c = {0, 0, 0, 1}
                     if x.walkable then
                         c = {0, 0, 0, 0}
                     end
                     love.graphics.setColor(c)
-                    love.graphics.rectangle("fill", tx, ty, cw-1, ch-1)
+                    love.graphics.rectangle("fill", tx, ty, cw, ch)
                 end
             end
         love.graphics.setCanvas()
 
         return love.graphics.newImage(tmp_canvas:newImageData())
     end
-
-    g.grid_image = g:generate_grid()
 
     return g
 end

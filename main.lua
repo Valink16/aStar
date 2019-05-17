@@ -18,34 +18,51 @@ function remove_from(v, set)
     end
 end
 
-function love.load()
-    love.window.setMode(500, 500, {resizable=true, minwidth=200, minheight=200, msaa=8})
-
-    -- Setting up the grid
+function init_grid()
+    -- Sets up the grid with random walls and returns it
     math.randomseed(os.time())
     cf = function()
         local r = math.random()
-        if r >= 0.4 then w = true else w = false end
+        if r >= 0.3 then w = true else w = false end
         return case.new(w)
     end
-    g = grid.new(20, 20, cf)
+    return grid.new(200, 200, cf)
+end
 
-    source = g[1][1]
-    goal = g[#g][#g[1]]
+function init_astar(gx, gy, sx, sy) -- Sets up for aStar pathfindings, arguments are coordinates in grid of goal(gx, gy) and source(sx, sy) 
+    -- Optional args
+    if not gx then gx = #g[1] / 2 end
+    if not gy then gy = #g / 2 end
+    if not sx then sx = 1 end
+    if not sy then sy = 1 end
 
-    openset = {source}
+    source = g[sy][sx]
+    goal = g[gy][gx]
+
+    source.walkable = true -- source and goal must be walkable
+    goal.walkable = true
+
+    openset = {source} -- Initial insert into openset
     closeset = {}
 
-    pathfinder_delay = 1 -- Delay in frames for one iteration of the Dijkstra algo
+    pathfinder_delay = 1 -- Delay in frames for one iteration of the aStar algo
     frame_counter = 0
     
     done = false
-    success = false
+
+    g.grid_image = g:generate_grid() -- get a premade image of the grid for MOAR PERFORMACE
+end
+
+
+function love.load()
+    love.window.setMode(1000, 1000, {resizable=true, minwidth=200, minheight=200, msaa=8})
+    g = init_grid()
+    init_astar()
 end
 
 function love.update(dt)
     frame_counter = frame_counter + 1
-    if frame_counter == pathfinder_delay and not done then
+    if (not done) and frame_counter == pathfinder_delay then
         frame_counter = 0
 
         -- Finding case in openset with the smallest f
@@ -60,15 +77,17 @@ function love.update(dt)
         table.insert(closeset, current)
         remove_from(current, openset)
 
-        if current == goal then
+        if current == goal then -- Checking if we found a path
             done = true
-            success = true
             print("Done !")
+            path = {}
+            path = current:build_path(source)
             goto found_path
-        elseif current == nil then
+        elseif current == nil then -- if current is nil it means that openset[1] does not exist(openset is empty, so there's nothing to evaluate. /!\ Look for assignment of current at start of love.update)
             done = true
-            success = false
-            print("Could not find path...")
+            print("Sorry, could not find a path..., resetting")
+            g = init_grid()
+            g.grid_image = g:generate_grid()
             goto found_path
         end
         
@@ -87,19 +106,15 @@ function love.update(dt)
             end
 
             n.g = future_g
-            n.h = n:dist_between(goal) * 1.5
+            local d = n:dist_between(goal)
+            n.h = d*d 
             n.make_f()
             n.previous = current
 
             ::ignore_neighbour::
         end
     end
-
     ::found_path::
-    path = {}
-    if done and success then
-        path = current:build_path(source)
-    end
 end
 
 function love.draw() 
@@ -109,7 +124,7 @@ function love.draw()
 
     g:draw_grid(openset, closeset, false)
 
-    if done then
+    if done and not(path == nil) then
         -- Drawing path
         local ww, wh = love.window.getMode()
         local cw = ww / #g[1] * g.sx-- Case width
@@ -117,5 +132,15 @@ function love.draw()
         for i, c in ipairs(path) do
             c:draw(cw, ch, {0, 0, 255})
         end
+    end
+end
+
+function love.mousereleased(x, y, b)
+    local ww, wh = love.window.getMode()
+    local tx = math.floor(x / (ww / #g[1])+.5) 
+    local ty = math.floor(y / (wh / #g)+.5)  
+    print(tx, ty)
+    if b == 1 then
+        init_astar(tx, ty)
     end
 end

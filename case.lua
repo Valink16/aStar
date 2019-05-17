@@ -33,11 +33,11 @@ new = function(walkable)
     end
 
     function case:draw(cw, ch, c, debug)
-        local tx = (case.x-1) * (cw) + 1
-        local ty = (case.y-1) * (ch) + 1
+        local tx = (case.x-1) * (cw) 
+        local ty = (case.y-1) * (ch) 
 
         love.graphics.setColor(c)
-        love.graphics.rectangle("fill", tx, ty, cw-1, ch-1)
+        love.graphics.rectangle("fill", tx, ty, cw, ch)
         if debug then
             love.graphics.setColor(0, 0, 0)
             love.graphics.draw(
